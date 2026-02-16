@@ -1,228 +1,243 @@
-code
-HTML
 <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Odtwarzacz z Pętlą</title>
+    <title>Multi Audio Looper - Twoja playlista w pętli</title>
     <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #a29bfe;
+            --bg-color: #f0f2f5;
+            --text-color: #2d3436;
+            --card-bg: #ffffff;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             display: flex;
             justify-content: center;
-            padding: 20px;
+            align-items: flex-start;
+            min-height: 100vh;
             margin: 0;
+            padding: 40px 20px;
         }
-        .main-container {
-            width: 100%;
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
             max-width: 600px;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        h1 { text-align: center; color: #333; }
-        
-        /* Sekcja wgrywania */
-        .upload-section {
-            border: 2px dashed #ccc;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            background: #fafafa;
-        }
-        #fileInput { margin-top: 10px; }
-
-        /* Odtwarzacz */
-        .player-wrapper {
-            background: #eee;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            width: 100%;
             text-align: center;
         }
-        audio { width: 100%; }
-        .now-playing { font-weight: bold; margin-bottom: 10px; color: #555; }
 
-        /* LISTA UTWORÓW */
-        .playlist-title { font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
-        #playlistDisplay { list-style: none; padding: 0; margin: 0; }
-        
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; color: var(--primary-color); }
+        p { color: #636e72; margin-bottom: 2rem; }
+
+        .upload-area {
+            border: 3px dashed #dcdde1;
+            padding: 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #fdfdff;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover { border-color: var(--primary-color); background-color: #f0f0ff; }
+
+        #fileInput { display: none; }
+
+        /* Sekcja Playlisty */
+        .playlist-container {
+            text-align: left;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            display: none;
+        }
+
         .track-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 10px;
-            background: #fff;
-            border: 1px solid #ddd;
-            margin-bottom: 5px;
-            border-radius: 5px;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
         }
-        .track-item.active { background-color: #e3f2fd; border-color: #2196f3; }
-        
-        .track-name { 
-            cursor: pointer; 
-            flex-grow: 1; 
-            margin-right: 10px;
-            color: #333;
-        }
-        .track-name:hover { color: #2196f3; text-decoration: underline; }
 
-        .delete-btn {
-            background-color: #ff5252;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
+        .track-item:last-child { border-bottom: none; }
+        .track-item.active {
+            background-color: #efedff;
+            border-left: 4px solid var(--primary-color);
+            font-weight: bold;
         }
-        .delete-btn:hover { background-color: #d32f2f; }
-        
-        .footer-info { font-size: 12px; color: #888; text-align: center; margin-top: 20px; }
+
+        .track-number { width: 30px; color: #b2bec3; font-size: 0.8rem; }
+        .track-name { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
+
+        /* Odtwarzacz */
+        .player-controls {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid #f1f1f1;
+            display: none;
+        }
+
+        audio { width: 100%; height: 40px; }
+
+        .status-badge {
+            display: inline-block;
+            background: #6c5ce7;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .clear-btn {
+            background: none;
+            border: none;
+            color: #ff7675;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            text-decoration: underline;
+        }
+
+        footer { margin-top: 30px; font-size: 0.75rem; color: #b2bec3; }
     </style>
 </head>
 <body>
 
-<div class="main-container">
-    <h1>Audio Looper</h1>
-    
-    <div class="upload-section">
-        <strong>Wybierz pliki MP3 lub WAV:</strong><br>
-        <input type="file" id="fileInput" accept="audio/*" multiple>
+<div class="container">
+    <h1>Multi Audio Looper</h1>
+    <p>Wgraj wiele plików. Będą odtwarzane jeden po drugim w nieskończonej pętli.</p>
+
+    <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <span style="font-size: 40px;">📂</span><br>
+        <strong>Kliknij lub przeciągnij wiele plików Wav/MP3</strong>
+        <input type="file" id="fileInput" accept="audio/mpeg, audio/WAV/mp3" multiple>
     </div>
 
-    <div class="player-wrapper">
-        <div class="now-playing" id="currentTitle">Brak utworów</div>
-        <audio id="audioElement" controls></audio>
+    <div class="player-controls" id="playerSection">
+        <div class="status-badge" id="status">Odtwarzanie pętli</div>
+        <div id="currentTrackTitle" style="margin-bottom: 10px; font-weight: bold; font-size: 0.9rem;"></div>
+        <audio id="audioPlayer" controls>Twoja przeglądarka nie obsługuje audio.</audio>
+        <br>
+        <button class="clear-btn" onclick="clearPlaylist()">Wyczyść playlistę</button>
     </div>
 
-    <div class="playlist-title">Twoja lista utworów:</div>
-    <div id="playlistDisplay">
-        <!-- Tu pojawią się utwory -->
+    <div class="playlist-container" id="playlistSection">
+        <div id="playlistItems"></div>
     </div>
 
-    <div class="footer-info">Pliki są zapisywane w pamięci przeglądarki. Nie znikną po odświeżeniu.</div>
+    <footer>
+        Wszystkie pliki pozostają na Twoim komputerze (prywatność 100%).
+    </footer>
 </div>
 
 <script>
     const fileInput = document.getElementById('fileInput');
-    const audio = document.getElementById('audioElement');
-    const playlistDisplay = document.getElementById('playlistDisplay');
-    const currentTitle = document.getElementById('currentTitle');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const playlistItems = document.getElementById('playlistItems');
+    const playerSection = document.getElementById('playerSection');
+    const playlistSection = document.getElementById('playlistSection');
+    const currentTrackTitle = document.getElementById('currentTrackTitle');
 
-    let db;
-    let tracks = []; // lokalna lista utworów
+    let playlist = []; // Tablica przechowująca obiekty z plikami i ich URL
     let currentIndex = 0;
 
-    // 1. Otwieranie bazy danych IndexedDB (pamięć trwała)
-    const request = indexedDB.open("MusicLooperDB", 1);
-    
-    request.onupgradeneeded = (e) => {
-        db = e.target.result;
-        db.createObjectStore("songs", { keyPath: "id", autoIncrement: true });
-    };
-
-    request.onsuccess = (e) => {
-        db = e.target.result;
-        refreshPlaylist(); // ładuj pliki po starcie
-    };
-
-    // 2. Obsługa dodawania plików
-    fileInput.addEventListener('change', (e) => {
-        const files = Array.from(e.target.files);
-        
-        files.forEach(file => {
-            const transaction = db.transaction("songs", "readwrite");
-            const store = transaction.objectStore("songs");
-            const songData = { name: file.name, blob: file };
-            
-            store.add(songData).onsuccess = () => {
-                refreshPlaylist();
-            };
-        });
+    fileInput.addEventListener('change', function() {
+        handleFiles(this.files);
     });
 
-    // 3. Wyświetlanie listy utworów i przycisków USUŃ
-    function refreshPlaylist() {
-        const transaction = db.transaction("songs", "readonly");
-        const store = transaction.objectStore("songs");
-        const getAll = store.getAll();
+    // Obsługa przeciągania
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#6c5ce7'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#dcdde1'; });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#dcdde1';
+        handleFiles(e.dataTransfer.files);
+    });
 
-        getAll.onsuccess = () => {
-            tracks = getAll.result;
-            playlistDisplay.innerHTML = "";
-
-            if (tracks.length === 0) {
-                playlistDisplay.innerHTML = "<p style='color: #999; text-align: center;'>Lista jest pusta</p>";
-                currentTitle.innerText = "Brak utworów";
-                audio.src = "";
-                return;
-            }
-
-            tracks.forEach((track, index) => {
-                const div = document.createElement('div');
-                div.className = "track-item" + (index === currentIndex && audio.src !== "" ? " active" : "");
-                
-                div.innerHTML = `
-                    <span class="track-name">${index + 1}. ${track.name}</span>
-                    <button class="delete-btn">Usuń</button>
-                `;
-
-                // Kliknięcie w nazwę -> odtwarzaj
-                div.querySelector('.track-name').onclick = () => playTrack(index);
-
-                // Kliknięcie w USUŃ
-                div.querySelector('.delete-btn').onclick = () => deleteTrack(track.id);
-
-                playlistDisplay.appendChild(div);
-            });
-        };
-    }
-
-    // 4. Odtwarzanie konkretnego utworu
-    function playTrack(index) {
-        if (index < 0 || index >= tracks.length) return;
+    function handleFiles(files) {
+        const newFiles = Array.from(files).filter(file => file.type === "audio/mpeg" || file.type === "audio/WAV/mp3");
         
-        currentIndex = index;
-        const track = tracks[currentIndex];
-        
-        // Tworzymy tymczasowy link do pliku w pamięci
-        const url = URL.createObjectURL(track.blob);
-        audio.src = url;
-        currentTitle.innerText = "Gra teraz: " + track.name;
-        
-        audio.play();
-        refreshPlaylist();
-    }
+        if (newFiles.length === 0) return;
 
-    // 5. Usuwanie utworu
-    function deleteTrack(id) {
-        const transaction = db.transaction("songs", "readwrite");
-        const store = transaction.objectStore("songs");
-        
-        store.delete(id).onsuccess = () => {
-            // Jeśli usuwamy ostatni utwór lub ten który gra, zatrzymaj muzykę
-            if (tracks.length === 1) {
-                audio.pause();
-                audio.src = "";
-            }
-            refreshPlaylist();
-        };
-    }
+        newFiles.forEach(file => {
+            const track = {
+                name: file.name,
+                url: URL.createObjectURL(file)
+            };
+            playlist.push(track);
+        });
 
-    // 6. Logika PĘTLI (następny po zakończeniu)
-    audio.onended = () => {
-        let nextIndex = currentIndex + 1;
-        if (nextIndex >= tracks.length) {
-            nextIndex = 0; // Wróć do początku jeśli koniec listy
+        renderPlaylist();
+        
+        // Jeśli nic nie gra, zacznij odtwarzanie
+        if (audioPlayer.paused && audioPlayer.src === "") {
+            playTrack(0);
         }
-        playTrack(nextIndex);
+
+        playerSection.style.display = 'block';
+        playlistSection.style.display = 'block';
+    }
+
+    function renderPlaylist() {
+        playlistItems.innerHTML = '';
+        playlist.forEach((track, index) => {
+            const item = document.createElement('div');
+            item.className = `track-item ${index === currentIndex ? 'active' : ''}`;
+            item.innerHTML = `
+                <div class="track-number">${index + 1}.</div>
+                <div class="track-name">${track.name}</div>
+            `;
+            item.onclick = () => playTrack(index);
+            playlistItems.appendChild(item);
+        });
+    }
+
+    function playTrack(index) {
+        if (index >= playlist.length) index = 0; // Powrót na początek (Pętla całej listy)
+        if (index < 0) index = playlist.length - 1;
+
+        currentIndex = index;
+        const track = playlist[currentIndex];
+        
+        audioPlayer.src = track.url;
+        currentTrackTitle.textContent = `Gra teraz: ${track.name}`;
+        audioPlayer.play();
+        
+        renderPlaylist();
+    }
+
+    // Kluczowa funkcja: Co się dzieje po zakończeniu utworu
+    audioPlayer.onended = function() {
+        // Przejdź do następnego utworu (jeśli to ostatni, playTrack(index) wróci do 0)
+        playTrack(currentIndex + 1);
     };
 
+    function clearPlaylist() {
+        playlist.forEach(track => URL.revokeObjectURL(track.url)); // Zwolnij pamięć
+        playlist = [];
+        currentIndex = 0;
+        audioPlayer.pause();
+        audioPlayer.src = "";
+        playerSection.style.display = 'none';
+        playlistSection.style.display = 'none';
+        fileInput.value = '';
+    }
 </script>
 
 </body>
