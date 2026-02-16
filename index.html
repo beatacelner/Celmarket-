@@ -3,242 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi Audio Looper - Twoja playlista w pętli</title>
+    <title>Audio Looper - Profesjonalny</title>
     <style>
-        :root {
-            --primary-color: #6c5ce7;
-            --secondary-color: #a29bfe;
-            --bg-color: #f0f2f5;
-            --text-color: #2d3436;
-            --card-bg: #ffffff;
-        }
-
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            margin: 0;
-            padding: 40px 20px;
-        }
-
-        .container {
-            background-color: var(--card-bg);
-            padding: 2.5rem;
-            border-radius: 24px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            max-width: 600px;
-            width: 100%;
-            text-align: center;
-        }
-
-        h1 { font-size: 2rem; margin-bottom: 0.5rem; color: var(--primary-color); }
-        p { color: #636e72; margin-bottom: 2rem; }
-
-        .upload-area {
-            border: 3px dashed #dcdde1;
-            padding: 30px;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background-color: #fdfdff;
-            margin-bottom: 20px;
-        }
-
-        .upload-area:hover { border-color: var(--primary-color); background-color: #f0f0ff; }
-
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #444; margin-bottom: 20px; }
+        
+        /* Wgrywanie */
+        .upload-box { border: 2px dashed #007bff; padding: 20px; text-align: center; border-radius: 10px; background: #f8fbff; cursor: pointer; margin-bottom: 20px; }
+        .upload-box:hover { background: #eef5ff; }
         #fileInput { display: none; }
 
-        /* Sekcja Playlisty */
-        .playlist-container {
-            text-align: left;
-            margin-top: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #eee;
-            border-radius: 10px;
-            display: none;
-        }
-
-        .track-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            transition: background 0.2s;
-        }
-
-        .track-item:last-child { border-bottom: none; }
-        .track-item.active {
-            background-color: #efedff;
-            border-left: 4px solid var(--primary-color);
-            font-weight: bold;
-        }
-
-        .track-number { width: 30px; color: #b2bec3; font-size: 0.8rem; }
-        .track-name { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
-
         /* Odtwarzacz */
-        .player-controls {
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 2px solid #f1f1f1;
-            display: none;
-        }
+        .player-section { background: #333; color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 25px; }
+        .now-playing { font-size: 14px; margin-bottom: 10px; color: #00d1ff; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        audio { width: 100%; height: 35px; }
 
-        audio { width: 100%; height: 40px; }
+        /* Lista utworów */
+        .playlist-header { font-weight: bold; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .track-list { display: flex; flex-direction: column; gap: 8px; }
+        .track-item { display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 8px; transition: 0.2s; }
+        .track-item.active { border-color: #007bff; background: #f0f7ff; box-shadow: 0 2px 5px rgba(0,123,255,0.2); }
+        
+        .track-name { cursor: pointer; flex-grow: 1; font-size: 14px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 10px; }
+        .track-name:hover { color: #007bff; }
 
-        .status-badge {
-            display: inline-block;
-            background: #6c5ce7;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        .btn-delete { background: #ff4d4d; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .btn-delete:hover { background: #cc0000; }
 
-        .clear-btn {
-            background: none;
-            border: none;
-            color: #ff7675;
-            cursor: pointer;
-            font-size: 0.8rem;
-            margin-top: 10px;
-            text-decoration: underline;
-        }
-
-        footer { margin-top: 30px; font-size: 0.75rem; color: #b2bec3; }
+        .empty-info { text-align: center; color: #999; font-size: 14px; margin-top: 20px; }
+        .footer { font-size: 11px; color: #aaa; text-align: center; margin-top: 30px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Multi Audio Looper</h1>
-    <p>Wgraj wiele plików. Będą odtwarzane jeden po drugim w nieskończonej pętli.</p>
+<div class="app-container">
+    <h1>Audio Looper</h1>
 
-    <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
-        <span style="font-size: 40px;">📂</span><br>
-        <strong>Kliknij lub przeciągnij wiele plików Wav/MP3</strong>
-        <input type="file" id="fileInput" accept="audio/mpeg, audio/WAV/mp3" multiple>
+    <!-- 1. Pole wyboru plików -->
+    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+        <strong>+ Dodaj pliki MP3 / WAV</strong>
+        <p style="font-size: 12px; margin: 5px 0 0;">Możesz zaznaczyć wiele plików naraz</p>
+        <input type="file" id="fileInput" accept="audio/mp3, audio/wav, audio/mpeg" multiple>
     </div>
 
-    <div class="player-controls" id="playerSection">
-        <div class="status-badge" id="status">Odtwarzanie pętli</div>
-        <div id="currentTrackTitle" style="margin-bottom: 10px; font-weight: bold; font-size: 0.9rem;"></div>
-        <audio id="audioPlayer" controls>Twoja przeglądarka nie obsługuje audio.</audio>
-        <br>
-        <button class="clear-btn" onclick="clearPlaylist()">Wyczyść playlistę</button>
+    <!-- 2. Sekcja odtwarzacza (zawsze na górze) -->
+    <div class="player-section">
+        <div id="statusLabel" class="now-playing">Wgraj muzykę, aby zacząć</div>
+        <audio id="audioPlayer" controls></audio>
     </div>
 
-    <div class="playlist-container" id="playlistSection">
-        <div id="playlistItems"></div>
+    <!-- 3. Lista utworów (zawsze widoczna) -->
+    <div class="playlist-header">
+        Twoja lista:
+        <span id="trackCount" style="font-weight: normal; font-size: 12px; color: #666;">0 utworów</span>
     </div>
+    <div id="playlistContainer" class="track-list">
+        <!-- Tutaj skrypt wstawi utwory -->
+    </div>
+    <div id="emptyMessage" class="empty-info">Twoja lista jest pusta</div>
 
-    <footer>
-        Wszystkie pliki pozostają na Twoim komputerze (prywatność 100%).
-    </footer>
+    <div class="footer">Wszystko działa lokalnie. Pliki nie znikają po odświeżeniu strony.</div>
 </div>
 
 <script>
     const fileInput = document.getElementById('fileInput');
     const audioPlayer = document.getElementById('audioPlayer');
-    const playlistItems = document.getElementById('playlistItems');
-    const playerSection = document.getElementById('playerSection');
-    const playlistSection = document.getElementById('playlistSection');
-    const currentTrackTitle = document.getElementById('currentTrackTitle');
+    const playlistContainer = document.getElementById('playlistContainer');
+    const statusLabel = document.getElementById('statusLabel');
+    const emptyMessage = document.getElementById('emptyMessage');
+    const trackCount = document.getElementById('trackCount');
 
-    let playlist = []; // Tablica przechowująca obiekty z plikami i ich URL
+    let db;
+    let playlist = []; // Aktualna lista utworów w pamięci
     let currentIndex = 0;
 
-    fileInput.addEventListener('change', function() {
-        handleFiles(this.files);
-    });
-
-    // Obsługa przeciągania
-    const dropZone = document.getElementById('dropZone');
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#6c5ce7'; });
-    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#dcdde1'; });
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.style.borderColor = '#dcdde1';
-        handleFiles(e.dataTransfer.files);
-    });
-
-    function handleFiles(files) {
-        const newFiles = Array.from(files).filter(file => file.type === "audio/mpeg" || file.type === "audio/WAV/mp3");
-        
-        if (newFiles.length === 0) return;
-
-        newFiles.forEach(file => {
-            const track = {
-                name: file.name,
-                url: URL.createObjectURL(file)
-            };
-            playlist.push(track);
-        });
-
-        renderPlaylist();
-        
-        // Jeśli nic nie gra, zacznij odtwarzanie
-        if (audioPlayer.paused && audioPlayer.src === "") {
-            playTrack(0);
-        }
-
-        playerSection.style.display = 'block';
-        playlistSection.style.display = 'block';
-    }
-
-    function renderPlaylist() {
-        playlistItems.innerHTML = '';
-        playlist.forEach((track, index) => {
-            const item = document.createElement('div');
-            item.className = `track-item ${index === currentIndex ? 'active' : ''}`;
-            item.innerHTML = `
-                <div class="track-number">${index + 1}.</div>
-                <div class="track-name">${track.name}</div>
-            `;
-            item.onclick = () => playTrack(index);
-            playlistItems.appendChild(item);
-        });
-    }
-
-    function playTrack(index) {
-        if (index >= playlist.length) index = 0; // Powrót na początek (Pętla całej listy)
-        if (index < 0) index = playlist.length - 1;
-
-        currentIndex = index;
-        const track = playlist[currentIndex];
-        
-        audioPlayer.src = track.url;
-        currentTrackTitle.textContent = `Gra teraz: ${track.name}`;
-        audioPlayer.play();
-        
-        renderPlaylist();
-    }
-
-    // Kluczowa funkcja: Co się dzieje po zakończeniu utworu
-    audioPlayer.onended = function() {
-        // Przejdź do następnego utworu (jeśli to ostatni, playTrack(index) wróci do 0)
-        playTrack(currentIndex + 1);
+    // --- BAZA DANYCH (ZAPAMIĘTYWANIE PLIKÓW) ---
+    const request = indexedDB.open("LooperDatabase", 1);
+    
+    request.onupgradeneeded = e => {
+        db = e.target.result;
+        db.createObjectStore("songs", { keyPath: "id", autoIncrement: true });
     };
 
-    function clearPlaylist() {
-        playlist.forEach(track => URL.revokeObjectURL(track.url)); // Zwolnij pamięć
-        playlist = [];
-        currentIndex = 0;
-        audioPlayer.pause();
-        audioPlayer.src = "";
-        playerSection.style.display = 'none';
-        playlistSection.style.display = 'none';
-        fileInput.value = '';
-    }
-</script>
+    request.onsuccess = e => {
+        db = e.target.result;
+        loadPlaylist(); // Ładuj pliki przy starcie
+    };
 
-</body>
-</html>
+    // --- ŁADOWANIE I WYŚWIETLANIE LISTY ---
+    function loadPlaylist() {
+        const transaction = db.transaction("songs", "readonly");
+        const store = transaction.objectStore("songs");
+        const requestAll = store.getAll();
+
+        requestAll.onsuccess = () => {
+            playlist = requestAll.result;
+            renderUI();
+        };
+    }
+
+    function renderUI() {
+        playlistContainer.innerHTML = "";
+        trackCount.innerText = `${playlist.length} utworów`;
+        
+        if (playlist.length === 0) {
+            emptyMessage.style.display = "block";
+            statusLabel.innerText = "Wgraj muzykę, aby zacząć";
+            audioPlayer.src = "";
+            return;
+        }
+
+        emptyMessage.style.display = "none";
+
+        playlist.forEach((song, index) => {
+            const item = document.createElement('div');
+            item.className = 'track-item' + (index === currentIndex && audioPlayer.src !== "" ? " active" : "");
+            
+            item.innerHTML = `
+                <div class="track-name" title="Kliknij, aby odtworzyć">${index + 1}. ${song.name}</div>
+                <button class="btn-delete">Usuń</button>
+            `;
+
+            // Odtwarzanie po kliknięciu w nazwę
+            item.querySelector('.track-name').onclick = () => playTrack(index);
+
+            // Usuwanie po kliknięciu w przycisk
+            item.querySelector('.btn-delete').onclick = () => deleteTrack(song.id);
+
+            playlistContainer.appendChild(item);
+        });
+    }
+
+    // --- OBSŁUGA PLIKÓW ---
+    fileInput.onchange = e => {
+        const files = Array.from(e.target.files);
+        const transaction = db.transaction("songs", "readwrite");
+        const store = transaction.objectStore("songs");
+
+        files.forEach(file => {
+            if (file.type.includes("audio")) {
+                store.add({ name: file.name, data: file });
+            }
+        });
+
+        transaction.oncomplete = () => {
+            loadPlaylist();
+            fileInput.value = ""; // Resetuj input
+        };
+    };
+
+    function deleteTrack(id) {
