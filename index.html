@@ -1,304 +1,243 @@
-code
-HTML
 <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Looper Pro - Trwała playlista</title>
+    <title>Profesjonalny Audio Looper</title>
     <style>
         :root {
-            --primary-color: #6c5ce7;
-            --secondary-color: #a29bfe;
-            --bg-color: #f0f2f5;
-            --text-color: #2d3436;
-            --card-bg: #ffffff;
+            --bg: #121212;
+            --card: #1e1e1e;
+            --accent: #bb86fc;
+            --text: #e0e0e0;
+            --danger: #cf6679;
+            --active: #3700b3;
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            margin: 0;
-            padding: 40px 20px;
+            padding: 20px;
         }
 
-        .container {
-            background-color: var(--card-bg);
-            padding: 2.5rem;
-            border-radius: 24px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            max-width: 600px;
+        .app-container {
             width: 100%;
-            text-align: center;
+            max-width: 500px;
+            background: var(--card);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        h1 { font-size: 2rem; margin-bottom: 0.5rem; color: var(--primary-color); }
-        .subtitle { color: #636e72; margin-bottom: 2rem; font-size: 0.9rem; }
+        h1 { font-size: 24px; text-align: center; color: var(--accent); margin-top: 0; }
+        p { font-size: 14px; text-align: center; opacity: 0.7; }
 
-        .upload-area {
-            border: 3px dashed #dcdde1;
+        /* Obszar wgrywania */
+        .drop-zone {
+            border: 2px dashed #444;
+            border-radius: 12px;
             padding: 30px;
-            border-radius: 15px;
+            text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            background-color: #fdfdff;
+            transition: 0.3s;
             margin-bottom: 20px;
         }
-
-        .upload-area:hover { border-color: var(--primary-color); background-color: #f0f0ff; }
+        .drop-zone:hover { border-color: var(--accent); background: rgba(187, 134, 252, 0.05); }
         #fileInput { display: none; }
 
-        .playlist-container {
-            text-align: left;
-            margin-top: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #eee;
-            border-radius: 10px;
+        /* Odtwarzacz */
+        .player-box {
+            background: #252525;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
         }
+        audio { width: 100%; filter: invert(100%); margin-top: 10px; }
+        .now-playing { font-size: 13px; font-weight: bold; color: var(--accent); margin-bottom: 5px; height: 1.2em; overflow: hidden; }
 
+        /* Lista utworów */
+        .playlist { list-style: none; padding: 0; margin: 0; }
         .track-item {
             display: flex;
             align-items: center;
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            transition: background 0.2s;
-            cursor: pointer;
-        }
-
-        .track-item:hover { background-color: #f8f9fa; }
-        .track-item.active {
-            background-color: #efedff;
-            border-left: 4px solid var(--primary-color);
-            font-weight: bold;
-        }
-
-        .track-number { width: 30px; color: #b2bec3; font-size: 0.8rem; }
-        .track-name { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
-
-        .player-controls {
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 2px solid #f1f1f1;
-            display: none;
-        }
-
-        audio { width: 100%; height: 40px; }
-
-        .status-badge {
-            display: inline-block;
-            background: #6c5ce7;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .clear-btn {
-            background: #ff7675;
-            border: none;
-            color: white;
-            padding: 8px 15px;
+            background: #2c2c2c;
+            margin-bottom: 8px;
+            padding: 10px 15px;
             border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            margin-top: 15px;
-            transition: opacity 0.2s;
+            gap: 10px;
+            transition: 0.2s;
         }
+        .track-item.active { background: var(--active); border-left: 4px solid var(--accent); }
+        
+        .track-info { flex-grow: 1; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+        
+        .btn-delete {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 5px;
+            line-height: 1;
+        }
+        .btn-delete:hover { transform: scale(1.2); }
 
-        .clear-btn:hover { opacity: 0.8; }
+        .empty-state { text-align: center; opacity: 0.4; font-style: italic; margin-top: 20px; }
 
-        footer { margin-top: 30px; font-size: 0.75rem; color: #b2bec3; }
-        .loading-msg { font-size: 0.8rem; color: var(--primary-color); margin-bottom: 10px; display: none; }
+        .footer { font-size: 11px; text-align: center; margin-top: 20px; opacity: 0.5; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Audio Looper Pro</h1>
-    <p class="subtitle">Wgraj pliki MP3 lub WAV. Twoja lista zostanie zapamiętana, dopóki jej nie wyczyścisz.</p>
+<div class="app-container">
+    <h1>Audio Looper</h1>
+    <p>Wgraj MP3/WAV. Pliki pozostaną na liście do momentu ich usunięcia.</p>
 
-    <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
-        <span style="font-size: 40px;">📂</span><br>
-        <strong>Dodaj pliki MP3 / WAV</strong>
-        <input type="file" id="fileInput" accept="audio/mpeg, audio/mp3, audio/wav, audio/x-wav" multiple>
+    <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+        <strong>+ Dodaj pliki audio</strong>
+        <br><span style="font-size: 12px;">MP3 lub WAV</span>
+        <input type="file" id="fileInput" accept="audio/*" multiple>
     </div>
 
-    <div id="loading" class="loading-msg">Wczytywanie zapisanych plików...</div>
-
-    <div class="player-controls" id="playerSection">
-        <div class="status-badge">Autoodtwarzanie w pętli ∞</div>
-        <div id="currentTrackTitle" style="margin-bottom: 10px; font-weight: bold; font-size: 0.9rem;"></div>
-        <audio id="audioPlayer" controls>Twoja przeglądarka nie obsługuje audio.</audio>
+    <div class="player-box">
+        <div class="now-playing" id="trackName">Czekam na pliki...</div>
+        <audio id="mainPlayer" controls></audio>
     </div>
 
-    <div class="playlist-container" id="playlistSection">
-        <div id="playlistItems"></div>
-    </div>
+    <ul id="playlistUI" class="playlist"></ul>
+    <div id="emptyMsg" class="empty-state">Brak utworów na liście</div>
 
-    <button id="clearBtn" class="clear-btn" style="display: none;" onclick="clearPlaylist()">Wyczyść całą listę</button>
-
-    <footer>
-        Twoje pliki są bezpieczne – są przechowywane tylko lokalnie w Twojej przeglądarce.
-    </footer>
+    <div class="footer">Wszystkie pliki przechowywane są tylko lokalnie w Twojej przeglądarce.</div>
 </div>
 
 <script>
     const fileInput = document.getElementById('fileInput');
-    const audioPlayer = document.getElementById('audioPlayer');
-    const playlistItems = document.getElementById('playlistItems');
-    const playerSection = document.getElementById('playerSection');
-    const currentTrackTitle = document.getElementById('currentTrackTitle');
-    const clearBtn = document.getElementById('clearBtn');
-    const loadingMsg = document.getElementById('loading');
+    const player = document.getElementById('mainPlayer');
+    const playlistUI = document.getElementById('playlistUI');
+    const trackNameDisplay = document.getElementById('trackName');
+    const emptyMsg = document.getElementById('emptyMsg');
 
-    let playlist = []; 
-    let currentIndex = 0;
+    let playlist = []; // {id, name, blob}
+    let currentIndex = -1;
     let db;
 
-    // --- LOGIKA BAZY DANYCH (IndexedDB) ---
-
-    const dbRequest = indexedDB.open("AudioLooperDB", 1);
-
-    dbRequest.onupgradeneeded = (e) => {
+    // 1. INICJALIZACJA BAZY DANYCH (IndexedDB)
+    const request = indexedDB.open("LooperStore", 1);
+    request.onupgradeneeded = e => {
         db = e.target.result;
-        if (!db.objectStoreNames.contains("tracks")) {
-            db.createObjectStore("tracks", { autoIncrement: true });
-        }
+        db.createObjectStore("songs", { keyPath: "id", autoIncrement: true });
+    };
+    request.onsuccess = e => {
+        db = e.target.result;
+        loadSongs();
     };
 
-    dbRequest.onsuccess = (e) => {
-        db = e.target.result;
-        loadPlaylistFromDB();
-    };
+    // 2. ŁADOWANIE ZAPISANYCH UTWORÓW
+    function loadSongs() {
+        const transaction = db.transaction("songs", "readonly");
+        const store = transaction.objectStore("songs");
+        const getRequest = store.getAll();
 
-    function loadPlaylistFromDB() {
-        loadingMsg.style.display = 'block';
-        const transaction = db.transaction(["tracks"], "readonly");
-        const store = transaction.objectStore("tracks");
-        const request = store.getAll();
-
-        request.onsuccess = () => {
-            const savedFiles = request.result;
-            if (savedFiles.length > 0) {
-                savedFiles.forEach(fileData => {
-                    addTrackToPlaylist(fileData.file, false);
-                });
-                renderPlaylist();
-                playerSection.style.display = 'block';
-                clearBtn.style.display = 'inline-block';
+        getRequest.onsuccess = () => {
+            playlist = getRequest.result;
+            refreshUI();
+            if (playlist.length > 0 && currentIndex === -1) {
+                setTrack(0, false);
             }
-            loadingMsg.style.display = 'none';
         };
     }
 
-    function saveFileToDB(file) {
-        const transaction = db.transaction(["tracks"], "readwrite");
-        const store = transaction.objectStore("tracks");
-        store.add({ file: file, name: file.name });
-    }
+    // 3. DODAWANIE PLIKÓW
+    fileInput.onchange = e => {
+        const files = Array.from(e.target.files);
+        const transaction = db.transaction("songs", "readwrite");
+        const store = transaction.objectStore("songs");
 
-    // --- LOGIKA ODTWARZACZA ---
-
-    fileInput.addEventListener('change', function() {
-        handleFiles(this.files);
-    });
-
-    function handleFiles(files) {
-        const newFiles = Array.from(files).filter(file => 
-            file.type.includes("audio/mpeg") || 
-            file.type.includes("audio/mp3") || 
-            file.type.includes("audio/wav") || 
-            file.type.includes("audio/x-wav")
-        );
-        
-        if (newFiles.length === 0) return;
-
-        newFiles.forEach(file => {
-            addTrackToPlaylist(file, true);
+        files.forEach(file => {
+            if (file.type.startsWith('audio/')) {
+                const song = { name: file.name, data: file };
+                const addReq = store.add(song);
+                addReq.onsuccess = (ev) => {
+                    song.id = ev.target.result;
+                    playlist.push(song);
+                    refreshUI();
+                    if (currentIndex === -1) setTrack(0, false);
+                };
+            }
         });
-
-        renderPlaylist();
-        
-        if (audioPlayer.paused && audioPlayer.src === "") {
-            playTrack(0);
-        }
-
-        playerSection.style.display = 'block';
-        clearBtn.style.display = 'inline-block';
-    }
-
-    function addTrackToPlaylist(file, shouldSave) {
-        const track = {
-            name: file.name,
-            url: URL.createObjectURL(file)
-        };
-        playlist.push(track);
-        if (shouldSave) saveFileToDB(file);
-    }
-
-    function renderPlaylist() {
-        playlistItems.innerHTML = '';
-        playlist.forEach((track, index) => {
-            const item = document.createElement('div');
-            item.className = `track-item ${index === currentIndex ? 'active' : ''}`;
-            item.innerHTML = `
-                <div class="track-number">${index + 1}.</div>
-                <div class="track-name">${track.name}</div>
-            `;
-            item.onclick = () => playTrack(index);
-            playlistItems.appendChild(item);
-        });
-    }
-
-    function playTrack(index) {
-        if (playlist.length === 0) return;
-        if (index >= playlist.length) index = 0; 
-        if (index < 0) index = playlist.length - 1;
-
-        currentIndex = index;
-        const track = playlist[currentIndex];
-        
-        audioPlayer.src = track.url;
-        currentTrackTitle.textContent = `Gra teraz: ${track.name}`;
-        audioPlayer.play().catch(e => console.log("Czekam na interakcję użytkownika..."));
-        
-        renderPlaylist();
-    }
-
-    audioPlayer.onended = function() {
-        playTrack(currentIndex + 1);
     };
 
-    function clearPlaylist() {
-        if (!confirm("Czy na pewno chcesz usunąć wszystkie utwory z listy?")) return;
+    // 4. ODŚWIEŻANIE WIDOKU LISTY
+    function refreshUI() {
+        playlistUI.innerHTML = "";
+        emptyMsg.style.display = playlist.length ? "none" : "block";
 
-        // Czyścimy bazę danych
-        const transaction = db.transaction(["tracks"], "readwrite");
-        const store = transaction.objectStore("tracks");
-        const clearRequest = store.clear();
+        playlist.forEach((song, index) => {
+            const li = document.createElement('li');
+            li.className = `track-item ${index === currentIndex ? 'active' : ''}`;
+            li.innerHTML = `
+                <div class="track-info">${index + 1}. ${song.name}</div>
+                <button class="btn-delete" title="Usuń">×</button>
+            `;
 
-        clearRequest.onsuccess = () => {
-            // Czyścimy pamięć i widok
-            playlist.forEach(track => URL.revokeObjectURL(track.url));
-            playlist = [];
-            currentIndex = 0;
-            audioPlayer.pause();
-            audioPlayer.src = "";
-            playerSection.style.display = 'none';
-            clearBtn.style.display = 'none';
-            renderPlaylist();
-            fileInput.value = '';
+            li.querySelector('.track-info').onclick = () => setTrack(index, true);
+            li.querySelector('.btn-delete').onclick = (e) => {
+                e.stopPropagation();
+                deleteSong(song.id, index);
+            };
+
+            playlistUI.appendChild(li);
+        });
+    }
+
+    // 5. USTAWIANIE UTWORU
+    function setTrack(index, autoPlay) {
+        if (index < 0 || index >= playlist.length) return;
+        
+        currentIndex = index;
+        const song = playlist[currentIndex];
+        const url = URL.createObjectURL(song.data);
+        
+        player.src = url;
+        trackNameDisplay.textContent = song.name;
+        
+        refreshUI();
+        if (autoPlay) player.play();
+    }
+
+    // 6. USUWANIE UTWORU
+    function deleteSong(id, index) {
+        const transaction = db.transaction("songs", "readwrite");
+        const store = transaction.objectStore("songs");
+        store.delete(id).onsuccess = () => {
+            playlist.splice(index, 1);
+            
+            if (currentIndex === index) {
+                player.pause();
+                player.src = "";
+                trackNameDisplay.textContent = "Wybierz utwór";
+                currentIndex = -1;
+                if (playlist.length > 0) setTrack(0, false);
+            } else if (currentIndex > index) {
+                currentIndex--;
+            }
+            
+            refreshUI();
         };
     }
+
+    // 7. LOGIKA PĘTLI
+    player.onended = () => {
+        let nextIndex = currentIndex + 1;
+        if (nextIndex >= playlist.length) nextIndex = 0; // Wróć do początku
+        setTrack(nextIndex, true);
+    };
+
 </script>
 
 </body>
