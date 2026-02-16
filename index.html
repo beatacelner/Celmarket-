@@ -245,3 +245,326 @@ HTML
 
 </body>
 </html>
+Jak wprowadzić zmianę na GitHub?
+Wejdź na swoje repozytorium na GitHubie.Celmarket-
+Kliknij w plik .index.html
+Kliknij ikonkę (Edytuj to fołówka
+Zaznacz cały stary kod (Ctrl + A) i usuń go (Backspace / Delete).
+Wklej nowy kod, który skopiowałaś powyżej.
+Zjedź na dół i kliknij zielony przycisk .Zmiany w commitach
+Twoja strona zaktualizuje się automatycznie w ciągu minuty i będzie od teraz przyjmować pliki !WAV
+16.6s
+Model
+Myślenie
+Przemyślenia
+Rozwiń, aby zobaczyć myśli o modelu
+
+chevron_right
+To jest wyzwanie techniczne, ponieważ standardowe strony internetowe ze względów bezpieczeństwa "zapominają" o plikach z Twojego dysku po odświeżeniu strony.
+Aby to naprawić, musimy użyć technologii – to taka mała baza danych wewnątrz Twojej przeglądarki. Dzięki niej pliki zostaną zapisane w pamięci przeglądarki i będą tam dostępne nawet po wyłączeniu komputera, dopóki nie klikniesz "Wyczyść playlistę".IndexedDB
+Oto zaktualizowany kod:
+code
+HTML
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Looper Pro - Trwała playlista</title>
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #a29bfe;
+            --bg-color: #f0f2f5;
+            --text-color: #2d3436;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; color: var(--primary-color); }
+        .subtitle { color: #636e72; margin-bottom: 2rem; font-size: 0.9rem; }
+
+        .upload-area {
+            border: 3px dashed #dcdde1;
+            padding: 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #fdfdff;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover { border-color: var(--primary-color); background-color: #f0f0ff; }
+        #fileInput { display: none; }
+
+        .playlist-container {
+            text-align: left;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 10px;
+        }
+
+        .track-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .track-item:hover { background-color: #f8f9fa; }
+        .track-item.active {
+            background-color: #efedff;
+            border-left: 4px solid var(--primary-color);
+            font-weight: bold;
+        }
+
+        .track-number { width: 30px; color: #b2bec3; font-size: 0.8rem; }
+        .track-name { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
+
+        .player-controls {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid #f1f1f1;
+            display: none;
+        }
+
+        audio { width: 100%; height: 40px; }
+
+        .status-badge {
+            display: inline-block;
+            background: #6c5ce7;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .clear-btn {
+            background: #ff7675;
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 15px;
+            transition: opacity 0.2s;
+        }
+
+        .clear-btn:hover { opacity: 0.8; }
+
+        footer { margin-top: 30px; font-size: 0.75rem; color: #b2bec3; }
+        .loading-msg { font-size: 0.8rem; color: var(--primary-color); margin-bottom: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Audio Looper Pro</h1>
+    <p class="subtitle">Wgraj pliki MP3 lub WAV. Twoja lista zostanie zapamiętana, dopóki jej nie wyczyścisz.</p>
+
+    <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <span style="font-size: 40px;">📂</span><br>
+        <strong>Dodaj pliki MP3 / WAV</strong>
+        <input type="file" id="fileInput" accept="audio/mpeg, audio/mp3, audio/wav, audio/x-wav" multiple>
+    </div>
+
+    <div id="loading" class="loading-msg">Wczytywanie zapisanych plików...</div>
+
+    <div class="player-controls" id="playerSection">
+        <div class="status-badge">Autoodtwarzanie w pętli ∞</div>
+        <div id="currentTrackTitle" style="margin-bottom: 10px; font-weight: bold; font-size: 0.9rem;"></div>
+        <audio id="audioPlayer" controls>Twoja przeglądarka nie obsługuje audio.</audio>
+    </div>
+
+    <div class="playlist-container" id="playlistSection">
+        <div id="playlistItems"></div>
+    </div>
+
+    <button id="clearBtn" class="clear-btn" style="display: none;" onclick="clearPlaylist()">Wyczyść całą listę</button>
+
+    <footer>
+        Twoje pliki są bezpieczne – są przechowywane tylko lokalnie w Twojej przeglądarce.
+    </footer>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const playlistItems = document.getElementById('playlistItems');
+    const playerSection = document.getElementById('playerSection');
+    const currentTrackTitle = document.getElementById('currentTrackTitle');
+    const clearBtn = document.getElementById('clearBtn');
+    const loadingMsg = document.getElementById('loading');
+
+    let playlist = []; 
+    let currentIndex = 0;
+    let db;
+
+    // --- LOGIKA BAZY DANYCH (IndexedDB) ---
+
+    const dbRequest = indexedDB.open("AudioLooperDB", 1);
+
+    dbRequest.onupgradeneeded = (e) => {
+        db = e.target.result;
+        if (!db.objectStoreNames.contains("tracks")) {
+            db.createObjectStore("tracks", { autoIncrement: true });
+        }
+    };
+
+    dbRequest.onsuccess = (e) => {
+        db = e.target.result;
+        loadPlaylistFromDB();
+    };
+
+    function loadPlaylistFromDB() {
+        loadingMsg.style.display = 'block';
+        const transaction = db.transaction(["tracks"], "readonly");
+        const store = transaction.objectStore("tracks");
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+            const savedFiles = request.result;
+            if (savedFiles.length > 0) {
+                savedFiles.forEach(fileData => {
+                    addTrackToPlaylist(fileData.file, false);
+                });
+                renderPlaylist();
+                playerSection.style.display = 'block';
+                clearBtn.style.display = 'inline-block';
+            }
+            loadingMsg.style.display = 'none';
+        };
+    }
+
+    function saveFileToDB(file) {
+        const transaction = db.transaction(["tracks"], "readwrite");
+        const store = transaction.objectStore("tracks");
+        store.add({ file: file, name: file.name });
+    }
+
+    // --- LOGIKA ODTWARZACZA ---
+
+    fileInput.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
+
+    function handleFiles(files) {
+        const newFiles = Array.from(files).filter(file => 
+            file.type.includes("audio/mpeg") || 
+            file.type.includes("audio/mp3") || 
+            file.type.includes("audio/wav") || 
+            file.type.includes("audio/x-wav")
+        );
+        
+        if (newFiles.length === 0) return;
+
+        newFiles.forEach(file => {
+            addTrackToPlaylist(file, true);
+        });
+
+        renderPlaylist();
+        
+        if (audioPlayer.paused && audioPlayer.src === "") {
+            playTrack(0);
+        }
+
+        playerSection.style.display = 'block';
+        clearBtn.style.display = 'inline-block';
+    }
+
+    function addTrackToPlaylist(file, shouldSave) {
+        const track = {
+            name: file.name,
+            url: URL.createObjectURL(file)
+        };
+        playlist.push(track);
+        if (shouldSave) saveFileToDB(file);
+    }
+
+    function renderPlaylist() {
+        playlistItems.innerHTML = '';
+        playlist.forEach((track, index) => {
+            const item = document.createElement('div');
+            item.className = `track-item ${index === currentIndex ? 'active' : ''}`;
+            item.innerHTML = `
+                <div class="track-number">${index + 1}.</div>
+                <div class="track-name">${track.name}</div>
+            `;
+            item.onclick = () => playTrack(index);
+            playlistItems.appendChild(item);
+        });
+    }
+
+    function playTrack(index) {
+        if (playlist.length === 0) return;
+        if (index >= playlist.length) index = 0; 
+        if (index < 0) index = playlist.length - 1;
+
+        currentIndex = index;
+        const track = playlist[currentIndex];
+        
+        audioPlayer.src = track.url;
+        currentTrackTitle.textContent = `Gra teraz: ${track.name}`;
+        audioPlayer.play().catch(e => console.log("Czekam na interakcję użytkownika..."));
+        
+        renderPlaylist();
+    }
+
+    audioPlayer.onended = function() {
+        playTrack(currentIndex + 1);
+    };
+
+    function clearPlaylist() {
+        if (!confirm("Czy na pewno chcesz usunąć wszystkie utwory z listy?")) return;
+
+        // Czyścimy bazę danych
+        const transaction = db.transaction(["tracks"], "readwrite");
+        const store = transaction.objectStore("tracks");
+        const clearRequest = store.clear();
+
+        clearRequest.onsuccess = () => {
+            // Czyścimy pamięć i widok
+            playlist.forEach(track => URL.revokeObjectURL(track.url));
+            playlist = [];
+            currentIndex = 0;
+            audioPlayer.pause();
+            audioPlayer.src = "";
+            playerSection.style.display = 'none';
+            clearBtn.style.display = 'none';
+            renderPlaylist();
+            fileInput.value = '';
+        };
+    }
+</script>
+
+</body>
+</html>
