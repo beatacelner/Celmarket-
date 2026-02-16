@@ -1,9 +1,11 @@
+code
+HTML
 <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi MP3 Looper - Twoja playlista w pętli</title>
+    <title>Multi Audio Looper - Twoja playlista w pętli</title>
     <style>
         :root {
             --primary-color: #6c5ce7;
@@ -52,7 +54,6 @@
 
         #fileInput { display: none; }
 
-        /* Sekcja Playlisty */
         .playlist-container {
             text-align: left;
             margin-top: 20px;
@@ -81,7 +82,6 @@
         .track-number { width: 30px; color: #b2bec3; font-size: 0.8rem; }
         .track-name { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
 
-        /* Odtwarzacz */
         .player-controls {
             margin-top: 25px;
             padding-top: 20px;
@@ -119,13 +119,14 @@
 <body>
 
 <div class="container">
-    <h1>Multi MP3 Looper</h1>
-    <p>Wgraj wiele plików. Będą odtwarzane jeden po drugim w nieskończonej pętli.</p>
+    <h1>Multi Audio Looper</h1>
+    <p>Wgraj wiele plików (MP3 lub WAV). Będą odtwarzane w nieskończonej pętli.</p>
 
     <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
         <span style="font-size: 40px;">📂</span><br>
-        <strong>Kliknij lub przeciągnij wiele plików MP3</strong>
-        <input type="file" id="fileInput" accept="audio/mpeg, audio/mp3" multiple>
+        <strong>Kliknij lub przeciągnij pliki MP3 / WAV</strong>
+        <!-- Dodano obsługę audio/wav -->
+        <input type="file" id="fileInput" accept="audio/mpeg, audio/mp3, audio/wav, audio/x-wav" multiple>
     </div>
 
     <div class="player-controls" id="playerSection">
@@ -141,7 +142,7 @@
     </div>
 
     <footer>
-        Wszystkie pliki pozostają na Twoim komputerze (prywatność 100%).
+        Prywatność 100% – pliki nie opuszczają Twojego komputera.
     </footer>
 </div>
 
@@ -153,14 +154,13 @@
     const playlistSection = document.getElementById('playlistSection');
     const currentTrackTitle = document.getElementById('currentTrackTitle');
 
-    let playlist = []; // Tablica przechowująca obiekty z plikami i ich URL
+    let playlist = []; 
     let currentIndex = 0;
 
     fileInput.addEventListener('change', function() {
         handleFiles(this.files);
     });
 
-    // Obsługa przeciągania
     const dropZone = document.getElementById('dropZone');
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = '#6c5ce7'; });
     dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = '#dcdde1'; });
@@ -171,7 +171,13 @@
     });
 
     function handleFiles(files) {
-        const newFiles = Array.from(files).filter(file => file.type === "audio/mpeg" || file.type === "audio/mp3");
+        // Zaktualizowany filtr - akceptuje mp3 i wav
+        const newFiles = Array.from(files).filter(file => 
+            file.type === "audio/mpeg" || 
+            file.type === "audio/mp3" || 
+            file.type === "audio/wav" || 
+            file.type === "audio/x-wav"
+        );
         
         if (newFiles.length === 0) return;
 
@@ -185,7 +191,6 @@
 
         renderPlaylist();
         
-        // Jeśli nic nie gra, zacznij odtwarzanie
         if (audioPlayer.paused && audioPlayer.src === "") {
             playTrack(0);
         }
@@ -209,7 +214,7 @@
     }
 
     function playTrack(index) {
-        if (index >= playlist.length) index = 0; // Powrót na początek (Pętla całej listy)
+        if (index >= playlist.length) index = 0; 
         if (index < 0) index = playlist.length - 1;
 
         currentIndex = index;
@@ -222,14 +227,12 @@
         renderPlaylist();
     }
 
-    // Kluczowa funkcja: Co się dzieje po zakończeniu utworu
     audioPlayer.onended = function() {
-        // Przejdź do następnego utworu (jeśli to ostatni, playTrack(index) wróci do 0)
         playTrack(currentIndex + 1);
     };
 
     function clearPlaylist() {
-        playlist.forEach(track => URL.revokeObjectURL(track.url)); // Zwolnij pamięć
+        playlist.forEach(track => URL.revokeObjectURL(track.url));
         playlist = [];
         currentIndex = 0;
         audioPlayer.pause();
