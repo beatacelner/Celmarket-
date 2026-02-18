@@ -1,35 +1,30 @@
-code
-HTML
 <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Looper - Wspólna Playlista</title>
+    <title>Audio Looper - Test Błędów</title>
     <style>
-        body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        body { font-family: sans-serif; background-color: #f4f4f4; padding: 20px; display: flex; justify-content: center; }
         .app-container { width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #333; margin-top: 0; }
         .player-card { background: #222; color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
-        .title-display { font-size: 14px; margin-bottom: 10px; color: #4fc3f7; height: 1.2em; overflow: hidden; }
         audio { width: 100%; }
         .track-list { display: flex; flex-direction: column; gap: 5px; }
-        .track-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
-        .track-item.active { background: #e3f2fd; border-color: #2196f3; }
-        .track-btn { cursor: pointer; flex-grow: 1; text-align: left; background: none; border: none; font-size: 14px; color: #333; }
-        .track-btn:hover { color: #007bff; }
-        .badge { background: #007bff; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 10px; }
+        .track-item { padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; }
+        .track-item:hover { background: #f0f0f0; }
+        .track-item.active { border-color: #2196f3; background: #e3f2fd; }
+        #error-log { color: #ff5252; font-size: 12px; margin-top: 10px; background: #fff0f0; padding: 5px; border-radius: 4px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <h1>Audio Looper</h1>
-    <p style="text-align: center; font-size: 12px; color: #666;">Wspólna playlista z serwera</p>
-
+    <h1 style="text-align: center; font-size: 20px;">Audio Looper</h1>
+    
     <div class="player-card">
-        <div id="nowPlaying" class="title-display">Wybierz utwór</div>
+        <div id="nowPlaying" style="font-size: 13px; color: #4fc3f7; margin-bottom: 10px;">Wybierz plik z listy</div>
         <audio id="player" controls></audio>
+        <div id="error-log"></div>
     </div>
 
     <div id="list" class="track-list"></div>
@@ -39,57 +34,54 @@ HTML
     const player = document.getElementById('player');
     const list = document.getElementById('list');
     const nowPlaying = document.getElementById('nowPlaying');
+    const errorLog = document.getElementById('error-log');
 
-    // --- index.html ---
+    // --- WPISZ TUTAJ DOKŁADNE NAZWY PLIKÓW ---
+    // Przykład: "spot1.wav" lub "Spot1.WAV"
     const publicFiles = [
-        "Celmarket_Spot_Reklamowy (2).wav",
-        "Celmarket_Spot_Reklamowy (3).wav",
-       
+        "Celmarket_Spot_Reklamowy_2.wav",
+        "Celmarket_Spot_Reklamowy_3.wav"
     ];
 
-    let currentIndex = 0;
-
-    // Funkcja budująca listę
     function buildPlaylist() {
         list.innerHTML = "";
         publicFiles.forEach((fileName, index) => {
             const row = document.createElement('div');
-            row.className = 'track-item' + (index === currentIndex ? ' active' : '');
-            
-            row.innerHTML = `
-                <button class="track-btn">${index + 1}. ${fileName}</button>
-                <span class="badge">Publiczny</span>
-            `;
-
+            row.className = 'track-item';
+            row.innerHTML = `<span>${index + 1}. ${fileName}</span>`;
             row.onclick = () => play(index);
             list.appendChild(row);
         });
     }
 
     function play(index) {
-        if (index < 0 || index >= publicFiles.length) return;
-        
-        currentIndex = index;
+        errorLog.style.display = "none";
         const fileName = publicFiles[index];
-
-        // Pobieramy plik bezpośrednio z serwera GitHub
-        player.src = fileName; 
-        nowPlaying.innerText = "Gra teraz: " + fileName;
+        nowPlaying.innerText = "Próba ładowania: " + fileName;
         
-        player.play();
-        buildPlaylist();
+        // Dodajemy ./ przed nazwą, żeby GitHub na pewno szukał w tym samym folderze
+        player.src = "./" + fileName; 
+        
+        player.play().then(() => {
+            nowPlaying.innerText = "Gra teraz: " + fileName;
+        }).catch(err => {
+            errorLog.style.display = "block";
+            errorLog.innerText = "Błąd: " + err.message + " (Sprawdź czy nazwa pliku jest identyczna na GitHub)";
+        });
     }
 
-    // Pętla
+    // Jeśli sam odtwarzacz zgłosi błąd
+    player.onerror = function() {
+        errorLog.style.display = "block";
+        errorLog.innerText = "Błąd odtwarzacza: Nie znaleziono pliku lub zły format. Sprawdź wielkość liter w nazwie.";
+    };
+
     player.onended = () => {
-        let next = currentIndex + 1;
-        if (next >= publicFiles.length) next = 0;
+        let next = (publicFiles.indexOf(nowPlaying.innerText.replace("Gra teraz: ", "")) + 1) % publicFiles.length;
         play(next);
     };
 
-    // Uruchomienie listy na starcie
     buildPlaylist();
-
 </script>
 
 </body>
