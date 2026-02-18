@@ -5,33 +5,45 @@ HTML
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Looper - Wspólna Playlista</title>
+    <title>Audio Looper - Wspólna Lista</title>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; display: flex; justify-content: center; }
         .app-container { width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #333; margin-top: 0; }
+        
+        .upload-area { border: 2px dashed #007bff; padding: 15px; text-align: center; border-radius: 8px; background: #f9f9f9; cursor: pointer; margin-bottom: 20px; }
+        #fileInput { display: none; }
+
         .player-card { background: #222; color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
-        .title-display { font-size: 14px; margin-bottom: 10px; color: #4fc3f7; height: 1.2em; overflow: hidden; }
+        .title-display { font-size: 14px; margin-bottom: 10px; color: #4fc3f7; font-weight: bold; }
         audio { width: 100%; }
+
+        .list-header { font-weight: bold; margin-bottom: 10px; display: block; border-bottom: 1px solid #ddd; }
         .track-list { display: flex; flex-direction: column; gap: 5px; }
         .track-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
         .track-item.active { background: #e3f2fd; border-color: #2196f3; }
-        .track-btn { cursor: pointer; flex-grow: 1; text-align: left; background: none; border: none; font-size: 14px; color: #333; }
-        .track-btn:hover { color: #007bff; }
-        .badge { background: #007bff; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 10px; }
+        
+        .track-btn { cursor: pointer; flex-grow: 1; text-align: left; background: none; border: none; font-size: 14px; overflow: hidden; text-overflow: ellipsis; }
+        .del-btn { background: #ff5252; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-left: 10px; font-size: 12px; }
+        .badge { font-size: 10px; background: #eee; padding: 2px 5px; border-radius: 4px; margin-left: 5px; color: #666; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <h1>Audio Looper</h1>
-    <p style="text-align: center; font-size: 12px; color: #666;">Wspólna playlista z serwera</p>
+
+    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        <strong>+ Dodaj nowe pliki WAV / MP3</strong>
+        <input type="file" id="fileInput" accept="audio/*" multiple>
+    </div>
 
     <div class="player-card">
-        <div id="nowPlaying" class="title-display">Wybierz utwór</div>
+        <div id="nowPlaying" class="title-display">Wybierz utwór z listy</div>
         <audio id="player" controls></audio>
     </div>
 
+    <span class="list-header">Twoja playlista:</span>
     <div id="list" class="track-list"></div>
 </div>
 
@@ -39,58 +51,94 @@ HTML
     const player = document.getElementById('player');
     const list = document.getElementById('list');
     const nowPlaying = document.getElementById('nowPlaying');
+    const fileInput = document.getElementById('fileInput');
 
-    // --- Celmarket_Spot_Reklamowy (2).wav
-Celmarket_Spot_Reklamowy (3).wav ---
-    const publicFiles = [
-        "muzyka1.mp3",
-        "audio2.wav",
-        "twoj-plik.mp3"
+    // --- index.html ---
+    const serverFiles = [
+        "moj_plik.wav", 
+        "muzyka.mp3"
     ];
 
+    let db;
+    let localTracks = [];
     let currentIndex = 0;
+    let isPlayingServerFile = false;
 
-    // Funkcja budująca listę
-    function buildPlaylist() {
-        list.innerHTML = "";
-        publicFiles.forEach((fileName, index) => {
-            const row = document.createElement('div');
-            row.className = 'track-item' + (index === currentIndex ? ' active' : '');
-            
-            row.innerHTML = `
-                <button class="track-btn">${index + 1}. ${fileName}</button>
-                <span class="badge">Publiczny</span>
-            `;
+    // Inicjalizacja bazy dla plików dodawanych ręcznie
+    const req = indexedDB.open("MultiPlayerDB", 1);
+    req.onupgradeneeded = e => { e.target.result.createObjectStore("songs", { keyPath: "id", autoIncrement: true }); };
+    req.onsuccess = e => { db = e.target.result; refreshUI(); };
 
-            row.onclick = () => play(index);
-            list.appendChild(row);
-        });
+    // Dodawanie nowych plików ręcznie
+    fileInput.onchange = e => {
+        const files = Array.from(e.target.files);
+        const tx = db.transaction("songs", "readwrite");
+        const store = tx.objectStore("songs");
+        files.forEach(f => store.add({ name: f.name, data: f }));
+        tx.oncomplete = () => { refreshUI(); fileInput.value = ""; };
+    };
+
+    function refreshUI() {
+        const tx = db.transaction("songs", "readonly");
+        tx.objectStore("songs").getAll().onsuccess = (e) => {
+            localTracks = e.target.result;
+            list.innerHTML = "";
+
+            // Najpierw pokazujemy pliki z serwera (GitHub)
+            serverFiles.forEach((name, index) => {
+                createTrackRow(name, index, true);
+            });
+
+            // Potem pliki dodane lokalnie
+            localTracks.forEach((track, index) => {
+                createTrackRow(track.name, index + serverFiles.length, false, track.id);
+            });
+        };
+    }
+
+    function createTrackRow(name, index, isServer, id = null) {
+        const row = document.createElement('div');
+        row.className = 'track-item' + (index === currentIndex ? ' active' : '');
+        row.innerHTML = `
+            <button class="track-btn">${name} ${isServer ? '<span class="badge">Serwer</span>' : ''}</button>
+            ${!isServer ? '<button class="del-btn">Usuń</button>' : ''}
+        `;
+        row.querySelector('.track-btn').onclick = () => play(index);
+        if(!isServer) row.querySelector('.del-btn').onclick = () => removeLocal(id);
+        list.appendChild(row);
     }
 
     function play(index) {
-        if (index < 0 || index >= publicFiles.length) return;
-        
         currentIndex = index;
-        const fileName = publicFiles[index];
+        if (player.src) URL.revokeObjectURL(player.src);
 
-        // Pobieramy plik bezpośrednio z serwera GitHub
-        player.src = fileName; 
-        nowPlaying.innerText = "Gra teraz: " + fileName;
-        
+        if (index < serverFiles.length) {
+            // Graj plik z serwera
+            const name = serverFiles[index];
+            player.src = name;
+            nowPlaying.innerText = "Gra (Serwer): " + name;
+        } else {
+            // Graj plik lokalny
+            const track = localTracks[index - serverFiles.length];
+            player.src = URL.createObjectURL(track.data);
+            nowPlaying.innerText = "Gra (Lokalny): " + track.name;
+        }
         player.play();
-        buildPlaylist();
+        refreshUI();
+    }
+
+    function removeLocal(id) {
+        const tx = db.transaction("songs", "readwrite");
+        tx.objectStore("songs").delete(id);
+        tx.oncomplete = refreshUI;
     }
 
     // Pętla
     player.onended = () => {
-        let next = currentIndex + 1;
-        if (next >= publicFiles.length) next = 0;
+        let total = serverFiles.length + localTracks.length;
+        let next = (currentIndex + 1) % total;
         play(next);
     };
-
-    // Uruchomienie listy na starcie
-    buildPlaylist();
-
 </script>
 
 </body>
