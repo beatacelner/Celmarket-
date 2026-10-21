@@ -31,116 +31,187 @@
 </div>
 
 <script>
-    const player = document.getElementById('player');
-    const list = document.getElementById('list');
-    const nowPlaying = document.getElementById('nowPlaying');
-    const errorLog = document.getElementById('error-log');
+const player = document.getElementById('player');
+const list = document.getElementById('list');
+const nowPlaying = document.getElementById('nowPlaying');
+const errorLog = document.getElementById('error-log');
 
-    // ---index.html ---
-    // Przykład: "spot1.wav" lub "Spot1.WAV"
-    const publicFiles = [
-       
-        "1.mp3",
-        "113.mp3",
-        "2.mp3",
-        "dudusie.mp3",
-        "112.mp3",
-        "3.mp3",
-        "111.mp3",
-        "4.mp3",
-        "110.mp3",
-        "5.mp3",
-        "109.mp3",
-        "6.mp3",
-        "108.mp3",
-    "dudusie.mp3",
-        "7.mp3",
-        "107.mp3",
-        "8.mp3",
-        "106.mp3", 
-        "9.mp3",
-       "105.mp3", 
-         "10.mp3",
-       "104.mp3", 
-         "dudusie.mp3",
-        "11.mp3",
-       "103.mp3", 
-        "12.mp3",
- "102.mp3", 
-        "13.mp3",
-      "101.mp3", 
-        "14.mp3",
-        "113.mp3",
-         "dudusie.mp3",
-        "15.mp3",
-        "112.mp3",
-        "16.mp3",
-        "111.mp3",
-         "17.mp3",
-        "110.mp3",
-        "18.mp3",
-        "109.mp3",
-         "dudusie.mp3",
-        "19.mp3",
-        "108.mp3",
-        "20.mp3",
-        "107.mp3",
-         "21.mp3",
-        "106.mp3",
-        "22.mp3",
-        "105.mp3",
-         "dudusie.mp3",
-        "23.mp3",
-        "104.mp3",
-         "24.mp3",
-        "103.mp3",
-        "25.mp3",
-        "102.mp3",
-        "26.mp3",
-        "101.mp3"
-       
-   ];
+// Lista utworów pozostaje taka jak w Twoim pliku
+const publicFiles = [
+"1.mp3",
+"113.mp3",
+"2.mp3",
+"dudusie.mp3",
+"112.mp3",
+"3.mp3",
+"111.mp3",
+"4.mp3",
+"110.mp3",
+"5.mp3",
+"109.mp3",
+"6.mp3",
+"108.mp3",
+"dudusie.mp3",
+"7.mp3",
+"107.mp3",
+"8.mp3",
+"106.mp3",
+"9.mp3",
+"105.mp3",
+"10.mp3",
+"104.mp3",
+"dudusie.mp3",
+"11.mp3",
+"103.mp3",
+"12.mp3",
+"102.mp3",
+"13.mp3",
+"101.mp3",
+"14.mp3",
+"113.mp3",
+"dudusie.mp3",
+"15.mp3",
+"112.mp3",
+"16.mp3",
+"111.mp3",
+"17.mp3",
+"110.mp3",
+"18.mp3",
+"109.mp3",
+"dudusie.mp3",
+"19.mp3",
+"108.mp3",
+"20.mp3",
+"107.mp3",
+"21.mp3",
+"106.mp3",
+"22.mp3",
+"105.mp3",
+"dudusie.mp3",
+"23.mp3",
+"104.mp3",
+"24.mp3",
+"103.mp3",
+"25.mp3",
+"102.mp3",
+"26.mp3",
+"101.mp3"
+];
 
-    function buildPlaylist() {
-        list.innerHTML = "";
-        publicFiles.forEach((fileName, index) => {
-            const row = document.createElement('div');
-            row.className = 'track-item';
-            row.innerHTML = `<span>${index + 1}. ${fileName}</span>`;
-            row.onclick = () => play(index);
-            list.appendChild(row);
-        });
-    }
+let currentIndex = -1;
+let failedInRow = 0;
+let advancing = false;
 
-    function play(index) {
-        errorLog.style.display = "none";
-        const fileName = publicFiles[index];
-        nowPlaying.innerText = "Próba ładowania: " + fileName;
-        
-        // Dodajemy ./ przed nazwą, żeby GitHub na pewno szukał w tym samym folderze
-        player.src = "./" + fileName; 
-        
-        player.play().then(() => {
-            nowPlaying.innerText = "Gra teraz: " + fileName;
-        }).catch(err => {
-            errorLog.style.display = "block";
-            errorLog.innerText = "Błąd: " + err.message + " (Sprawdź czy nazwa pliku jest identyczna na GitHub)";
-        });
-    }
+function buildPlaylist() {
+list.innerHTML = "";
 
-    // Jeśli sam odtwarzacz zgłosi błąd
-    player.onerror = function() {
-        errorLog.style.display = "block";
-        errorLog.innerText = "Błąd odtwarzacza: Nie znaleziono pliku lub zły format. Sprawdź wielkość liter w nazwie.";
-    };
+publicFiles.forEach((fileName, index) => {
+const row = document.createElement("div");
+row.className = "track-item";
+row.innerHTML =
+`<span>${index + 1}. ${fileName}</span>`;
 
-    player.onended = () => {
-        let next = (publicFiles.indexOf(nowPlaying.innerText.replace("Gra teraz: ", "")) + 1) % publicFiles.length;
-        play(next);
-    };
+row.onclick = () => play(index);
+list.appendChild(row);
+});
+}
 
-    buildPlaylist();
+function updateActiveTrack() {
+document.querySelectorAll(".track-item").forEach(
+(row, index) => {
+row.classList.toggle(
+"active",
+index === currentIndex
+);
+}
+);
+}
+
+function play(index) {
+if (index < 0 || index >= publicFiles.length) {
+return;
+}
+
+currentIndex = index;
+advancing = false;
+
+const fileName = publicFiles[currentIndex];
+
+errorLog.style.display = "none";
+nowPlaying.innerText = "Ładowanie: " + fileName;
+updateActiveTrack();
+
+player.src = "./" + fileName;
+player.load();
+
+player.play().then(() => {
+nowPlaying.innerText = "Gra teraz: " + fileName;
+}).catch(err => {
+// Nie pomijaj utworu tylko dlatego,
+// że przeglądarka zablokowała odtwarzanie.
+if (err.name === "NotAllowedError") {
+nowPlaying.innerText =
+"Kliknij Odtwórz: " + fileName;
+errorLog.style.display = "block";
+errorLog.innerText =
+"Przeglądarka wymaga ręcznego uruchomienia.";
+} else if (err.name !== "AbortError") {
+errorLog.style.display = "block";
+errorLog.innerText =
+"Nie udało się uruchomić: " + fileName;
+}
+});
+}
+
+function playNext() {
+if (advancing) return;
+
+advancing = true;
+
+if (failedInRow >= publicFiles.length) {
+nowPlaying.innerText = "Odtwarzanie zatrzymane";
+errorLog.style.display = "block";
+errorLog.innerText =
+"Nie udało się odtworzyć żadnego kolejnego pliku. Sprawdź nazwy i dostępność plików.";
+advancing = false;
+return;
+}
+
+const nextIndex = (currentIndex + 1) % publicFiles.length;
+
+if (failedInRow > 0) {
+errorLog.style.display = "block";
+errorLog.innerText =
+"Pominięto niedostępny plik. Próba kolejnego utworu.";
+}
+
+play(nextIndex);
+}
+
+player.addEventListener("ended", () => {
+failedInRow = 0;
+playNext();
+});
+
+player.addEventListener("playing", () => {
+failedInRow = 0;
+advancing = false;
+errorLog.style.display = "none";
+});
+
+player.addEventListener("error", () => {
+failedInRow++;
+
+errorLog.style.display = "block";
+errorLog.innerText =
+"Błąd pliku: " + publicFiles[currentIndex];
+
+playNext();
+});
+
+buildPlaylist();
 </script>
+
 
 </body>
 </html>
